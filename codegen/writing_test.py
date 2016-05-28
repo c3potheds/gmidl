@@ -195,7 +195,7 @@ class IndentWriterTest(LineWriterTest):
 				self.recorder.readline(), 
 				'no indent!')
 
-	def testIgnoreIndent(self):
+	def testIgnoreAndHeedIndent(self):
 		def getIndent(line):
 			if not line.startswith('    '):
 				return 0
@@ -214,9 +214,6 @@ class IndentWriterTest(LineWriterTest):
 		self.assertEqual(
 				[getIndent(line) for line in self.recorder.readlines()],
 				[1, 0, 0, 1, 2, 0])
-
-	def testHeedIndent(self):
-		pass
 
 
 if __name__ == '__main__':
