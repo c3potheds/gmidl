@@ -3,19 +3,17 @@
 """A module for writing formatted text with newlines and indentation.
 
 All text that you want to format with indentation should pass through an
-IndentWriter object, which has the methods increaseIndent(),
-decreaseIndent(), ignoreIndent(), and heedIndent() to easily interact with
-the states. For example:
+IndentWriter object, which has the methods like indent() and ignoreIndent()
+to easily interact with the states. For example:
 
     import codegen.writing
 
-    writer = codegen.writing.IndentWriter(codegen.writing.LineWriter)
+    writer = codegen.writing.IndentWriter()
     writer.writeLine('Dear Bob,')
-    writer.increaseIndent()
-    writer.writeLine()
-    writer.writeLine('How are you?')
-    writer.decreaseIndent()
-    writer.writeLine()
+    with writer.indent():
+        writer.writeLine()
+        writer.writeLine('How are you?')
+        writer.writeLine()
     writer.writeLine('Sincerely, Frank')
 
 will print the following:
