@@ -153,9 +153,8 @@ class IndentWriterTest(LineWriterTest):
 
     def testWriteIndent(self):
         self.writer.writeLine('unindented')
-        self.writer.increaseIndent()
-        self.writer.writeLine('indented')
-        self.writer.decreaseIndent()
+        with self.writer.indent():
+            self.writer.writeLine('indented')
         self.writer.writeLine('unindented')
         self.assertEqual(self.recorder.numberOfUnreadLines(), 3)
         self.assertEqual(self.recorder.readline(), 'unindented')
@@ -166,9 +165,8 @@ class IndentWriterTest(LineWriterTest):
         def writeLayers(indentAmount, maxIndent):
             self.writer.writeLine('level %d' % indentAmount)
             if indentAmount < maxIndent:
-                self.writer.increaseIndent()
-                writeLayers(indentAmount + 1, maxIndent)
-                self.writer.decreaseIndent()
+                with self.writer.indent():
+                    writeLayers(indentAmount + 1, maxIndent)
         writeLayers(0, 3)
         self.assertEqual(
                 self.recorder.numberOfUnreadLines(),
@@ -183,16 +181,15 @@ class IndentWriterTest(LineWriterTest):
                                     * numberFromLine,
                             numberFromLine))
 
-    def testDoubleIndent(self):
-        self.writer.increaseIndent(2)
-        self.writer.writeLine('double indent!')
-        self.writer.decreaseIndent(1)
-        self.writer.writeLine('single indent!')
-        self.writer.increaseIndent(2)
-        self.writer.writeLine('triple indent!')
-        self.writer.decreaseIndent(2)
-        self.writer.writeLine('single indent!')
-        self.writer.decreaseIndent(1)
+    def testMultiIndent(self):
+        with self.writer.indent(2):
+            self.writer.writeLine('double indent!')
+        with self.writer.indent(1):
+            self.writer.writeLine('single indent!')
+        with self.writer.indent(3):
+            self.writer.writeLine('triple indent!')
+        with self.writer.indent(1):
+            self.writer.writeLine('single indent!')
         self.writer.writeLine('no indent!')
         self.assertEqual(
                 self.recorder.readline(),
@@ -215,20 +212,21 @@ class IndentWriterTest(LineWriterTest):
             if not line.startswith('    '):
                 return 0
             return getIndent(line[writing.kDefaultIndentWidth:]) + 1
-        self.writer.increaseIndent()
-        self.writer.writeLine('blah')
-        self.writer.ignoreIndent()
-        self.writer.writeLine('blah')
-        self.writer.writeLine('blah')
-        self.writer.heedIndent()
-        self.writer.writeLine('blah')
-        self.writer.increaseIndent()
-        self.writer.writeLine('blah')
-        self.writer.ignoreIndent()
+        with self.writer.indent():
+            self.writer.writeLine('blah')
+            with self.writer.ignoreIndent():
+                self.writer.writeLine('blah')
+                self.writer.writeLine('blah')
+            self.writer.writeLine('blah')
+            with self.writer.indent():
+                self.writer.writeLine('blah')
+                with self.writer.ignoreIndent():
+                    self.writer.writeLine('blah')
+            self.writer.writeLine('blah')
         self.writer.writeLine('blah')
         self.assertEqual(
                 [getIndent(line) for line in self.recorder.readlines()],
-                [1, 0, 0, 1, 2, 0])
+                [1, 0, 0, 1, 2, 0, 1, 0])
 
     def testGetRemainingSpaceInLine(self):
         def testIndent(i, maxIndent):
@@ -238,9 +236,8 @@ class IndentWriterTest(LineWriterTest):
                             - i * len(writing.kDefaultNewlineChar)
                                     * writing.kDefaultIndentWidth)
             if i < maxIndent:
-                self.writer.increaseIndent()
-                testIndent(i + 1, maxIndent)
-                self.writer.decreaseIndent()
+                with self.writer.indent():
+                    testIndent(i + 1, maxIndent)
         testIndent(0, 20)
 
 

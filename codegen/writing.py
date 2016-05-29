@@ -61,6 +61,33 @@ class LineWriter(object):
 
 class IndentWriter(LineWriter):
 
+    class _Indent(object):
+
+        def __init__(self, indentWriter, amount):
+            self._indentWriter = indentWriter
+            self._amount = amount
+
+        def __enter__(self):
+            self._indentWriter._increaseIndent(self._amount)
+
+        def __exit__(self, exceptionType, exception, traceback):
+            self._indentWriter._decreaseIndent(self._amount)
+
+
+    class _IgnoreIndent(object):
+
+        def __init__(self, indentWriter):
+            self._indentWriter = indentWriter
+            self._previousValue = None
+
+        def __enter__(self):
+            self._previousValue = self._indentWriter._heedIndent
+            self._indentWriter._heedIndent = False
+
+        def __exit__(self, exceptionType, exception, traceback):
+            self._indentWriter._heedIndent = self._previousValue
+
+
     def __init__(self, writer=None, lineWriter=None,
             indentWidth=kDefaultIndentWidth,
             indentChar=kDefaultIndentChar,
@@ -73,19 +100,19 @@ class IndentWriter(LineWriter):
         self._maxLineWidth = maxLineWidth
         self._atLineStart = True
 
-    def increaseIndent(self, amount=1):
+    def indent(self, amount=1):
+        return self._Indent(self, amount)
+
+    def _increaseIndent(self, amount=1):
         self._indentPrefix += (
                 self._indentChar * self._indentWidth * amount)
 
-    def decreaseIndent(self, amount=1):
+    def _decreaseIndent(self, amount=1):
         self._indentPrefix = self._indentPrefix[
                 :-self._indentWidth * amount]
 
     def ignoreIndent(self):
-        self._heedIndent = False
-
-    def heedIndent(self):
-        self._heedIndent = True
+        return self._IgnoreIndent(self)
 
     def write(self, text):
         if self._heedIndent and self._atLineStart:
